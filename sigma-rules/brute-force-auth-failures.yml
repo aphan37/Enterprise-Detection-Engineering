@@ -1,0 +1,31 @@
+title: Excessive Authentication Failures Followed by Success
+id: 3f2a1b6e-7c4d-4e2a-9c1a-1a2b3c4d5e6f
+status: production
+description: >
+  Detects a source generating an abnormal volume of failed authentication
+  attempts within a short window, immediately followed by a successful login.
+references:
+  - https://attack.mitre.org/techniques/T1110/
+author: Anh Phan
+date: 2026-09-22
+tags:
+  - attack.credential_access
+  - attack.t1110
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_fail:
+    EventID: 4625
+  selection_success:
+    EventID: 4624
+  timeframe: 10m
+  condition: selection_fail | count() by User, IpAddress >= 8 followed by selection_success
+falsepositives:
+  - Service account password rotation events
+  - Shared kiosk/terminal accounts
+  - VPN concentrators retrying on flaky connections
+level: high
+---
+# Splunk translation (SPL) — see /detections/credential-access/brute-force-auth-failures.md
+# for the full annotated version with tuning notes and response actions.
