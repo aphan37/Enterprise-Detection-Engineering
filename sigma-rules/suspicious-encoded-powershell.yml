@@ -1,0 +1,35 @@
+title: Suspicious Encoded PowerShell Execution
+id: 8a4c2f1d-6e3b-4a9c-b2d1-5f6a7b8c9d0e
+status: production
+description: >
+  Detects PowerShell invoked with -EncodedCommand combined with execution
+  policy bypass flags, a common pattern for fileless malware delivery.
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+author: Anh Phan
+date: 2026-09-23
+tags:
+  - attack.execution
+  - attack.t1059.001
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith:
+      - '\powershell.exe'
+      - '\pwsh.exe'
+    CommandLine|contains:
+      - '-enc'
+      - '-encodedcommand'
+      - '-ep bypass'
+      - '-executionpolicy bypass'
+      - '-windowstyle hidden'
+  condition: selection
+falsepositives:
+  - Legitimate admin/automation scripts (SCCM, Intune) using -EncodedCommand
+  - Software deployment tools wrapping installers in PowerShell
+level: high
+---
+# Splunk translation (SPL) — see /detections/execution/suspicious-encoded-powershell.md
+# for the full annotated version with tuning notes and response actions.

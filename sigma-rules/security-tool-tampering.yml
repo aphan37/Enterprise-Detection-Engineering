@@ -1,0 +1,30 @@
+title: Security Tool Disabled or Tampered With
+id: 3d4e5f6a-7b8c-9d0e-1f2a-3b4c5d6e7f8a
+status: production
+description: >
+  Detects Windows Defender real-time protection being disabled or a
+  security-related service being stopped/disabled.
+references:
+  - https://attack.mitre.org/techniques/T1562/001/
+author: Anh Phan
+date: 2026-09-23
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_defender:
+    EventID: 5001
+  selection_service_disabled:
+    EventID: 7040
+    param3: 'disabled'
+  condition: selection_defender or selection_service_disabled
+falsepositives:
+  - Approved EDR agent updates or reinstalls within a documented maintenance window
+  - IT admin troubleshooting a false-positive AV detection
+level: critical
+---
+# Splunk translation (SPL) — see /detections/defense-evasion/security-tool-tampering.md
+# for the full annotated version with tuning notes and response actions.

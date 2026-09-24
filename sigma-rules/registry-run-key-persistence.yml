@@ -1,0 +1,29 @@
+title: New Autorun Entry via Registry Run Key or Startup Folder
+id: 1b2c3d4e-5f6a-7b8c-9d0e-1f2a3b4c5d6e
+status: production
+description: >
+  Detects a new value written to a common autorun registry key or a new
+  file dropped into a Startup folder.
+references:
+  - https://attack.mitre.org/techniques/T1547/001/
+author: Anh Phan
+date: 2026-09-23
+tags:
+  - attack.persistence
+  - attack.t1547.001
+logsource:
+  category: registry_set
+  product: windows
+detection:
+  selection_registry:
+    TargetObject|contains: '\CurrentVersion\Run'
+  selection_startup:
+    TargetFilename|contains: '\Startup\'
+  condition: selection_registry or selection_startup
+falsepositives:
+  - Legitimate software installers writing update-checker Run keys
+  - Endpoint management agents adding Run entries on install
+level: medium
+---
+# Splunk translation (SPL) — see /detections/persistence/registry-run-key-persistence.md
+# for the full annotated version with tuning notes and response actions.

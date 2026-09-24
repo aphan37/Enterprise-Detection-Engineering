@@ -1,0 +1,31 @@
+title: Lateral Movement via Admin Shares
+id: 4e5f6a7b-8c9d-0e1f-2a3b-4c5d6e7f8a9b
+status: production
+description: >
+  Detects a single account accessing administrative shares on multiple
+  distinct hosts within a short window (PsExec-style lateral movement).
+references:
+  - https://attack.mitre.org/techniques/T1021/002/
+author: Anh Phan
+date: 2026-09-23
+tags:
+  - attack.lateral_movement
+  - attack.t1021.002
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 5140
+    ShareName|contains:
+      - 'ADMIN$'
+      - 'C$'
+  timeframe: 10m
+  condition: selection | count() by SubjectUserName distinct dest >= 3
+falsepositives:
+  - Legitimate IT/helpdesk tools (SCCM, remote patching, backup software)
+  - Domain/Enterprise Admin accounts performing routine administration
+level: high
+---
+# Splunk translation (SPL) — see /detections/lateral-movement/admin-share-lateral-movement.md
+# for the full annotated version with tuning notes and response actions.
