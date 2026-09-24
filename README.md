@@ -1,24 +1,27 @@
 # Enterprise Detection Engineering
 
-A version-controlled library of 8 production-style SIEM detections, mapped to
-[MITRE ATT&CK](https://attack.mitre.org/), covering the full attack chain from
-initial access through exfiltration — built the way a detection engineering
-team manages rules inside a large enterprise SOC: as code, with tuning
-history, ownership, and CI validation, not as one-off queries.
+A version-controlled library of production-style SIEM detections, mapped to
+[MITRE ATT&CK](https://attack.mitre.org/) and covering the full attack chain
+from initial access through exfiltration. Each detection is documented the
+way a detection engineering team manages rules inside a large enterprise
+SOC: as code, with tuning history, ownership, and automated validation —
+not as a one-off query or a dashboard screenshot.
 
-**👉 Start here:** [`detections/credential-access/brute-force-auth-failures.md`](detections/credential-access/brute-force-auth-failures.md)
-is the best single file to read first — it shows the full format: SPL query,
-false-positive tuning decisions with real thresholds, and the analyst
-response playbook.
+**Start here:** [`brute-force-auth-failures.md`](detections/credential-access/brute-force-auth-failures.md)
+is the clearest single example of the format — SPL query, documented
+false-positive tuning with real thresholds, and the analyst response
+playbook.
 
-## What's in this repo
+## What this demonstrates
 
-| | |
+| Skill | Where it shows up |
 |---|---|
-| **8 detections** | Full ATT&CK chain: initial access → execution → persistence → privilege escalation → defense evasion → credential access → lateral movement → collection → C2 → exfiltration |
-| **6 Sigma translations** | Vendor-agnostic versions of the detections that don't rely on Splunk-only macros |
-| **CI lint pipeline** | Every detection is automatically checked against the required template on every push — [see it run](.github/workflows/lint-detections.yml) |
-| **Documented tuning history** | Every detection includes the actual false-positive sources found and how thresholds were adjusted — not just the final query |
+| **ATT&CK-driven detection design** | Every rule maps to a specific tactic and technique ID, not a generic "suspicious activity" alert |
+| **False-positive tuning judgment** | Every detection documents the actual noise sources found and the threshold changes made to fix them — this is the part of detection engineering that separates a working rule from a theoretical one |
+| **SIEM query engineering (SPL)** | 10 original Splunk searches using `stats`, `streamstats`, `transaction`, and `eval` logic, not copy-pasted starter queries |
+| **Cross-platform detection logic (Sigma)** | 6 of the 10 detections are also written as vendor-agnostic Sigma rules, showing the logic isn't tied to one tool |
+| **Operational maturity (severity/SLA)** | Every detection is tied to a severity tier and response SLA, and each includes a concrete analyst response playbook, not just "investigate further" |
+| **Detection-as-code discipline** | A CI pipeline automatically validates every detection against a required template on every push — enforced by tooling, not just convention |
 
 ## Detection coverage
 
@@ -35,20 +38,30 @@ response playbook.
 | Command & Control | [Periodic beaconing](detections/command-and-control/periodic-beaconing.md) | Critical |
 | Exfiltration | [Large outbound transfer](detections/exfiltration/large-outbound-transfer.md) | Critical |
 
-## Why this repo is structured this way
+## How each detection is documented
 
-Most portfolio repos show a single query or a dashboard screenshot. Enterprise
-SOC teams don't work that way — they manage hundreds of detections across
-multiple data sources, tune them continuously as false positives emerge, and
-track coverage against a framework to find gaps. This repo mirrors that
-workflow at a small scale:
+Every file follows a fixed structure:
 
-- Every detection lives in its own reviewable file, not buried in a wiki
-- False-positive tuning is documented as a first-class artifact, not an
-  afterthought — this is the part that actually demonstrates engineering
-  judgment, not just SPL syntax
-- A CI pipeline enforces that every detection meets the same documentation
-  bar before it's considered "production"
+- **ATT&CK mapping** — tactic and specific technique ID
+- **Required data source** — the exact log source/event ID the detection depends on
+- **SPL query** — the actual working search logic
+- **Sigma equivalent** — a portable version, where the logic isn't Splunk-specific
+- **False-positive tuning notes** — what caused noise in practice, and how the threshold or logic was adjusted
+- **Severity and SLA** — how fast the detection should be triaged and escalated
+- **Analyst response playbook** — the concrete steps to take when it fires
+- **Testing/validation** — how the detection was proven to actually fire (Atomic Red Team, synthetic log generation, or lab simulation)
+
+The full format is defined in [`docs/detection-template.md`](docs/detection-template.md)
+and enforced automatically — see below.
+
+## How the CI pipeline works
+
+[`.github/workflows/lint-detections.yml`](.github/workflows/lint-detections.yml)
+runs [`scripts/lint_spl.py`](scripts/lint_spl.py) on every push. The script
+checks every file in `detections/` for the required metadata fields, a
+non-empty SPL query, and the tuning/response sections — and fails the build
+if any are missing. This is the same discipline a detection-as-code pipeline
+enforces before a rule is allowed to ship to production.
 
 ## Repo structure
 
@@ -65,37 +78,18 @@ detection-engineering-repo/
 │   ├── collection/
 │   ├── command-and-control/
 │   └── exfiltration/
-├── sigma-rules/                 # Vendor-agnostic Sigma versions
+├── sigma-rules/                 # Vendor-agnostic Sigma translations
 ├── scripts/lint_spl.py          # CI validation script
 ├── docs/
-│   ├── detection-template.md    # Template every detection follows
-│   ├── severity-sla-matrix.md   # Severity → SLA → response action mapping
-│   └── contributing.md          # How a detection gets added/reviewed
+│   ├── detection-template.md    # Required format for every detection
+│   ├── severity-sla-matrix.md   # Severity → SLA → response mapping
+│   └── contributing.md          # Detection lifecycle: draft → validate → tune → production
 └── .github/workflows/           # CI: lints every detection on push
 ```
 
-## How a detection is documented
-
-Every file includes: ATT&CK mapping, required data source, the SPL query, a
-Sigma equivalent where portable, false-positive tuning notes, severity/SLA,
-the analyst response playbook, and how it was tested. See
-[`docs/detection-template.md`](docs/detection-template.md) for the exact
-format every detection is held to — and it's enforced automatically, not just
-by convention (see below).
-
-## How the CI pipeline works
-
-On every push, [`.github/workflows/lint-detections.yml`](.github/workflows/lint-detections.yml)
-runs [`scripts/lint_spl.py`](scripts/lint_spl.py) against every file in
-`detections/`. It fails the build if a detection is missing a required
-metadata field, has no SPL query, or is missing its tuning/response
-sections — the same discipline a real detection-as-code pipeline enforces
-before a rule ships to production.
-
 ## Background
 
-Built by [Anh Phan](https://github.com/aphan37). Professional experience
-includes triaging 330+ SPL-based alerts, building 12+ Splunk detection use
-cases, and maintaining Splunk Enterprise/Cloud data pipelines across Windows,
-Linux, Domain Controller, and SC4S sources as a Security Operations Analyst
-Intern.
+Built by [Anh Phan](https://github.com/aphan37), Security Operations Analyst
+with hands-on experience triaging 330+ SPL-based alerts, building 12+ Splunk
+detection use cases, and maintaining Splunk Enterprise/Cloud data pipelines
+across Windows, Linux, Domain Controller, and SC4S sources.
