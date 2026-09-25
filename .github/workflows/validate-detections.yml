@@ -1,0 +1,28 @@
+name: Validate Detections
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint detection docs (template compliance)
+        run: python scripts/lint_spl.py
+
+      - name: Run detection logic tests (synthetic attack + benign traffic)
+        run: pytest tests/ -v
